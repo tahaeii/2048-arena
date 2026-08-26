@@ -1,0 +1,10 @@
+dist/
+data/
+node_modules/
+.next/
+.husky
+.cache
+.gitlab-ci.yml
+next-env.d.ts
+next.config.ts
+*.lock

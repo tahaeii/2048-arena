@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  * {
+    @apply border-ash-700/60;
+  }
+
+  body {
+    @apply bg-ash-900 text-ash-100 antialiased;
+  }
+
+  /* Respect the user's reduced-motion preference across the app. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  /**
+   * Unified "Copper Clay" scene background: a warm mocha base, a soft
+   * amber glow floating behind the board, a darkened vignette toward the
+   * edges for depth, and a clean diamond-lattice pattern (two crossed
+   * hairline grids) for texture without noise.
+   */
+  .bg-scene {
+    background-color: #201a14;
+    background-image:
+      radial-gradient(ellipse 60% 42% at 50% 16%, rgba(240, 168, 60, 0.16), transparent 70%),
+      radial-gradient(ellipse 90% 70% at 50% 100%, rgba(0, 0, 0, 0.5), transparent 65%),
+      radial-gradient(ellipse 120% 90% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.35) 100%),
+      repeating-linear-gradient(
+        45deg,
+        rgba(255, 223, 143, 0.045) 0px,
+        rgba(255, 223, 143, 0.045) 1px,
+        transparent 1px,
+        transparent 30px
+      ),
+      repeating-linear-gradient(
+        -45deg,
+        rgba(255, 223, 143, 0.045) 0px,
+        rgba(255, 223, 143, 0.045) 1px,
+        transparent 1px,
+        transparent 30px
+      );
+    background-repeat: no-repeat, no-repeat, no-repeat, repeat, repeat;
+  }
+}

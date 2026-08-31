@@ -22,7 +22,7 @@ function SubmissionStatus({ submission }: { submission: GameOverlayProps['submis
     return <p className='mt-3 text-xs text-ash-500'>Saving your score…</p>;
   }
   if (submission.state === 'error') {
-    return <p className='mt-3 text-xs text-ash-500'>Couldn't reach the leaderboard server.</p>;
+      return <p className='mt-3 text-xs text-ash-500'>Couldn't reach the server — will retry automatically.</p>;
   }
   return (
     <p className='mt-3 text-xs text-ember-300'>

@@ -11,6 +11,7 @@ import { useGameEngine } from '@/hooks/useGameEngine';
 import { useKeyboardControls } from '@/hooks/useKeyboardControls';
 import { usePlayerName } from '@/hooks/usePlayerName';
 import { fetchTopScore, submitScore, type TopScoreResult } from '@/lib/api/scores';
+import { enqueuePendingScore, flushPendingScores } from '@/lib/api/scoreQueue';
 
 type SubmissionState = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -50,6 +51,26 @@ export function GameContainer() {
   // again after "keep playing" produces new merges), so it doubles as a
   // per-attempt token that lets the same session submit twice: once on
   // "won", and again with a higher score if they keep playing and later lose.
+  // const submittedForGameRef = useRef<string | null>(null);
+  // useEffect(() => {
+  //   if (state.status !== 'lost' && state.status !== 'won') return;
+  //   if (!name) return;
+
+  //   const gameFingerprint = state.tiles.map((tile) => tile.id).join(',');
+  //   if (submittedForGameRef.current === gameFingerprint) return;
+  //   submittedForGameRef.current = gameFingerprint;
+
+  //   setSubmission({ state: 'saving' });
+  //   submitScore(name, state.score)
+  //     .then((result) => {
+  //       setSubmission({ state: 'saved', rank: result.rank });
+  //       // The submission may have set a new all-time record; refresh it.
+  //       fetchTopScore()
+  //         .then(setGlobalTop)
+  //         .catch(() => {});
+  //     })
+  //     .catch(() => setSubmission({ state: 'error' }));
+  // }, [state.status, state.score, state.tiles, name]);
   const submittedForGameRef = useRef<string | null>(null);
   useEffect(() => {
     if (state.status !== 'lost' && state.status !== 'won') return;
@@ -63,14 +84,36 @@ export function GameContainer() {
     submitScore(name, state.score)
       .then((result) => {
         setSubmission({ state: 'saved', rank: result.rank });
-        // The submission may have set a new all-time record; refresh it.
         fetchTopScore()
           .then(setGlobalTop)
           .catch(() => {});
       })
-      .catch(() => setSubmission({ state: 'error' }));
+      .catch(() => {
+        // Request failed (most likely the connection dropped). Persist it
+        // locally so it isn't lost — it's retried automatically once the
+        // connection returns (see the effect below).
+        enqueuePendingScore({ name, score: state.score, fingerprint: gameFingerprint });
+        setSubmission({ state: 'error' });
+      });
   }, [state.status, state.score, state.tiles, name]);
 
+  // Retry any scores that failed earlier: once on mount (in case the page
+  // reloaded while offline) and again whenever the browser reconnects.
+  useEffect(() => {
+    function retryPending() {
+      flushPendingScores((entry, result) => {
+        if (entry.fingerprint === submittedForGameRef.current) {
+          setSubmission({ state: 'saved', rank: result.rank });
+        }
+      })
+        .then(() => fetchTopScore().then(setGlobalTop).catch(() => {}))
+        .catch(() => {});
+    }
+
+    retryPending();
+    window.addEventListener('online', retryPending);
+    return () => window.removeEventListener('online', retryPending);
+  }, []);
   function handleRestart() {
     setSubmission({ state: 'idle' });
     restart();
